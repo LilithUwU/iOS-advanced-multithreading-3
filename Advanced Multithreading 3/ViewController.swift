@@ -5,19 +5,13 @@
 //  Created by lilit on 30.07.25.
 //
 
-import UIKit
 
+import UIKit
 
 class ViewController: UIViewController {
     
     let queue = OperationQueue()
-    func myOperation(name: String) {
-        print("Operation \(name) started")
-        for _ in 0..<1_000_000 {
-            // do nothing
-        }
-        print("Operation \(name) finished")
-    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -25,14 +19,31 @@ class ViewController: UIViewController {
         var operationA: BlockOperation!
         
         operationB = BlockOperation {
-            self.myOperation(name: "B")
+            if operationB.isCancelled {
+                print("Operation \"B\" was cancelled before starting")
+                return
+            }
+            
+            print("Operation \"B\" started")
+            for _ in 0..<1_000_000 {
+                if operationB.isCancelled {
+                    print("Operation \"B\" was cancelled during execution")
+                    return
+                }
+            }
+            print("Operation \"B\" finished")
         }
         
         operationA = BlockOperation {
-            self.myOperation(name: "A")
+            print("Operation \"A\" started")
+            operationB.cancel()
+            for _ in 0..<1_000_000 {
+                // do something
+            }
+            print("Operation \"A\" finished")
         }
         
-//        operationB.addDependency(operationA) 
+        operationB.addDependency(operationA)
         
         queue.addOperations([operationA, operationB], waitUntilFinished: false)
     }
